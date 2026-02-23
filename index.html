@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Wedding RSVP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --cream: #f7f4fb;
+      --gold: #7b5ea7;
+      --gold-light: #a480c8;
+      --dark: #1a0a2e;
+      --brown: #4a2d6b;
+      --muted: #7a6890;
+      --border: rgba(123,94,167,0.25);
+      --error: #c0392b;
+      --success-bg: #f4f0fb;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: transparent;
+      font-family: 'Raleway', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      overflow: visible;
+    }
+
+    /* corner brackets hidden — replaced by floral frame */
+    .corner { display: none; }
+
+    /* ── SIDE FRAMES — 9-slice via border-image ──
+       Image: 406×3640px. Flower caps = 700px top & bottom in source.
+       Only the thin center line stretches; caps are pixel-perfect.   */
+    .floral-frame-left,
+    .floral-frame-right {
+      position: absolute;
+      top: -350px; bottom: -350px;
+      width: 48px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .floral-frame-left  { left: -7px; }
+    .floral-frame-right { right: -7px; transform: scaleX(-1); }
+    /* extend beyond the card top and bottom */
+    .floral-frame-left,
+    .floral-frame-right { top: -10px; bottom: -10px; }
+
+    .floral-frame-left::after,
+    .floral-frame-right::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-image-source: url('Frame.png');
+      /* slice: top=700 right=0 bottom=700 left=0 (source pixels), fill=keep center */
+      border-image-slice: 700 0 700 0 fill;
+      /* width: how tall the caps render on screen ≈ 83px each */
+      border-image-width: 82px 0 82px 0;
+      border-image-repeat: stretch;
+      border-style: solid;
+      border-color: transparent;
+      border-width: 82px 0 82px 0;
+    }
+
+    /* ── FLOWERS: replace the ♡ monogram, sit above text ── */
+    .floral-header-img {
+      display: block;
+      width: 140px;
+      margin: 0 auto 0.6rem;
+      pointer-events: none;
+      opacity: 0.88;
+      /* push it UP above the text, but still inside card flow */
+      margin-top: -1.2rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 2.8rem 2.5rem 2.5rem;
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 85% 8%, rgba(123,94,167,0.07) 0%, transparent 55%),
+        radial-gradient(circle at 15% 92%, rgba(160,128,200,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* ── HEADER ── */
+    .header { text-align: center; margin-bottom: 1.6rem; padding-top: 0.5rem; }
+
+    .monogram {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .mono-line { width: 36px; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+    .mono-line.r { background: linear-gradient(to left, transparent, var(--gold)); }
+    .mono-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.85rem; font-weight: 400;
+      color: var(--dark); line-height: 1.25;
+      margin-bottom: 0.7rem;
+    }
+    h1 em { font-style: italic; color: var(--gold); }
+
+    .event-details { display: flex; flex-direction: column; gap: 0.2rem; align-items: center; }
+    .detail-item { font-size: 0.76rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .dot-sep { color: var(--gold); margin: 0 0.4em; }
+
+    /* ── DIVIDER ── */
+    .divider { display: flex; align-items: center; gap: 1rem; margin: 1.6rem 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider-icon { color: var(--gold); font-size: 0.9rem; }
+
+    /* ── LOADING SPINNER ── */
+    .loading-wrap {
+      text-align: center;
+      padding: 2rem 0;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 2px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap p { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    /* ── FORM ELEMENTS ── */
+    .form-group { margin-bottom: 1.3rem; }
+
+    .form-label {
+      display: block;
+      font-size: 0.7rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.45rem; font-weight: 400;
+    }
+
+    .select-wrap { position: relative; }
+    select {
+      width: 100%; padding: 0.8rem 2.5rem 0.8rem 1rem;
+      background: var(--cream); border: 1px solid var(--border);
+      font-family: 'Raleway', sans-serif; font-size: 0.9rem;
+      font-weight: 300; color: var(--dark);
+      appearance: none; outline: none; cursor: pointer;
+      transition: border-color 0.25s;
+    }
+    select:focus { border-color: var(--gold); }
+    .sel-arrow { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gold); pointer-events: none; font-size: 0.6rem; }
+
+    input[type="text"], input[type="number"], textarea {
+      width: 100%; padding: 0.75rem 1rem;
+      background: var(--cream); border: 1px solid var(--border);
+      font-family: 'Raleway', sans-serif; font-size: 0.88rem;
+      font-weight: 300; color: var(--dark);
+      outline: none; transition: border-color 0.25s;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus { border-color: var(--gold); }
+    textarea { resize: none; height: 80px; }
+    input::placeholder, textarea::placeholder { color: #b8a8cc; }
+
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* ── ATTENDANCE BUTTONS ── */
+    .att-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    .att-option input[type="radio"] { display: none; }
+    .att-label {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.35rem; padding: 1rem 0.75rem;
+      border: 1px solid var(--border); background: var(--cream);
+      cursor: pointer; transition: all 0.25s; text-align: center;
+    }
+    .att-label:hover { border-color: var(--gold-light); }
+    .att-emoji { font-size: 1.4rem; }
+    .att-text { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
+    input[type="radio"]:checked + .att-label { border-color: var(--gold); background: #fff; }
+    input[type="radio"]:checked + .att-label .att-text { color: var(--brown); font-weight: 500; }
+
+    /* ── CHECKBOX STYLE ── */
+    .check-row {
+      display: flex; align-items: flex-start; gap: 0.7rem;
+      padding: 0.8rem 1rem;
+      background: var(--cream); border: 1px solid var(--border);
+      cursor: pointer; transition: border-color 0.2s;
+      margin-bottom: 0.75rem;
+    }
+    .check-row:hover { border-color: var(--gold-light); }
+    .check-row input[type="checkbox"] { display: none; }
+    .check-box {
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; margin-top: 1px;
+    }
+    .check-row input:checked ~ .check-box { background: var(--gold); border-color: var(--gold); }
+    .check-row input:checked ~ .check-box::after { content: '✓'; color: white; font-size: 11px; font-weight: 600; }
+    .check-text { font-size: 0.82rem; color: var(--brown); line-height: 1.5; }
+
+    /* ── GUEST COUNT STEPPER ── */
+    .stepper {
+      display: flex; align-items: center;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      width: fit-content;
+    }
+    .stepper-btn {
+      width: 44px; height: 44px;
+      background: none; border: none;
+      font-size: 1.3rem; color: var(--gold);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      user-select: none; flex-shrink: 0;
+    }
+    .stepper-btn:hover:not(:disabled) { background: var(--gold); color: #fff; }
+    .stepper-btn:disabled { color: var(--border); cursor: not-allowed; }
+    .stepper-value {
+      min-width: 52px; text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem; color: var(--dark);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 0 0.5rem; line-height: 44px;
+      user-select: none;
+    }
+
+    /* ── EXTRA GUEST BLOCK ── */
+    .extras-section {
+      border-left: 2px solid var(--gold-light);
+      padding-left: 1rem;
+      margin-bottom: 1.3rem;
+      display: none;
+    }
+    .extras-section.visible { display: block; animation: slideDown 0.3s ease; }
+
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .guest-entry {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .guest-entry-header {
+      font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 0.6rem; font-weight: 500;
+    }
+
+    .age-input-wrap { margin-top: 0.5rem; display: none; }
+    .age-input-wrap.visible { display: block; animation: slideDown 0.25s ease; }
+
+    /* ── ERROR / HELPER ── */
+    .field-error { display: none; font-size: 0.7rem; color: var(--error); margin-top: 0.3rem; letter-spacing: 0.04em; }
+    .field-hint { font-size: 0.7rem; color: var(--muted); margin-top: 0.3rem; letter-spacing: 0.04em; }
+
+    /* ── SUBMIT BUTTON ── */
+    .submit-btn {
+      width: 100%; padding: 1rem;
+      background: var(--dark); color: var(--cream);
+      border: none; font-family: 'Raleway', sans-serif;
+      font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.3s;
+      margin-top: 0.5rem; position: relative; overflow: hidden;
+    }
+    .submit-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(160,128,200,0.15) 100%);
+    }
+    .submit-btn:hover:not(:disabled) { background: var(--brown); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── CHANGE ANSWER LINK ── */
+    .change-link-wrap {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .change-link {
+      font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      cursor: pointer; border-bottom: 1px dashed var(--border);
+      transition: color 0.2s;
+    }
+    .change-link:hover { color: var(--gold); }
+
+    /* ── RESPONDED NOTICE ── */
+    .already-responded {
+      background: var(--cream); border: 1px solid var(--border);
+      padding: 1rem 1.2rem; margin-bottom: 1.3rem;
+      font-size: 0.82rem; color: var(--brown); line-height: 1.6;
+      display: none;
+    }
+    .already-responded strong { color: var(--gold); font-weight: 500; }
+
+    /* ── SUCCESS SCREEN ── */
+    .success-screen {
+      display: none; text-align: center;
+      padding: 2rem 0;
+      animation: slideDown 0.6s ease both;
+    }
+    .success-icon { font-size: 3rem; margin-bottom: 1.2rem; display: block; }
+    .success-screen h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 400; color: var(--dark); margin-bottom: 0.6rem;
+    }
+    .success-screen h2 em { font-style: italic; color: var(--gold); }
+    .success-screen p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; max-width: 320px; margin: 0 auto; }
+
+    /* ── CONNECTION ERROR ── */
+    .conn-error {
+      display: none; text-align: center; padding: 1.5rem 0;
+    }
+    .conn-error p { font-size: 0.82rem; color: var(--error); line-height: 1.6; }
+    .retry-btn {
+      margin-top: 1rem; padding: 0.6rem 1.5rem;
+      background: transparent; border: 1px solid var(--gold);
+      font-family: 'Raleway', sans-serif; font-size: 0.72rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--gold); cursor: pointer; transition: all 0.2s;
+    }
+    .retry-btn:hover { background: var(--gold); color: #fff; }
+
+    @media (max-width: 420px) {
+      .card { padding: 2rem 1.5rem; }
+      h1 { font-size: 1.5rem; }
+    }
+
+    /* ── LANGUAGE PICKER ── */
+    .lang-picker {
+      position: absolute;
+      top: 0.9rem;
+      right: 1.8rem;
+      z-index: 10;
+    }
+    .lang-select-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .lang-select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 0.1rem; top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 0.72rem;
+      pointer-events: none;
+    }
+    .lang-select {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      border-bottom: 1px dashed var(--border);
+      padding: 0.25rem 1.3rem 0.25rem 0.1rem;
+      cursor: pointer;
+      outline: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .lang-select:hover,
+    .lang-select:focus { color: var(--gold); border-color: var(--gold); }
+
+    /* ── LANGUAGE HINT ANIMATION ── */
+    @keyframes langPulse {
+      0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(123,94,167,0); }
+      30%  { transform: scale(1.18); box-shadow: 0 0 0 6px rgba(123,94,167,0.25); }
+      60%  { transform: scale(1);    box-shadow: 0 0 0 10px rgba(123,94,167,0); }
+      100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(123,94,167,0); }
+    }
+
+    @keyframes langCycleHighlight {
+      0%   { color: var(--muted); border-color: var(--border); }
+      20%  { color: var(--gold);  border-color: var(--gold); }
+      50%  { color: var(--muted); border-color: var(--border); }
+      100% { color: var(--muted); border-color: var(--border); }
+    }
+
+    @keyframes langTooltipFade {
+      0%   { opacity: 0; transform: translateY(4px); }
+      15%  { opacity: 1; transform: translateY(0); }
+      75%  { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-4px); }
+    }
+
+    .lang-picker.hinting .lang-select-wrap {
+      animation: langPulse 0.9s ease 0.6s 2;
+    }
+    .lang-picker.hinting .lang-select {
+      animation: langCycleHighlight 1.8s ease 0.6s 1 forwards;
+    }
+
+    /* Tooltip bubble that appears below */
+    .lang-tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--brown);
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding: 0.35rem 0.7rem;
+      border-radius: 3px;
+      pointer-events: none;
+      opacity: 0;
+      animation: langTooltipFade 2.8s ease 0.4s 1 forwards;
+    }
+    /* little arrow on tooltip */
+    .lang-tooltip::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      right: 10px;
+      border: 5px solid transparent;
+      border-bottom-color: var(--brown);
+    }
+
+    .couple-names {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.3rem;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="floral-frame-left"></div>
+  <div class="floral-frame-right"></div>
+
+  <div class="card">
+
+
+    <!-- LANGUAGE PICKER -->
+    <div class="lang-picker" id="langPicker">
+      <div class="lang-select-wrap">
+        <select class="lang-select" onchange="setLang(this.value)" aria-label="Language">
+          <option value="en">EN</option>
+          <option value="fr">FR</option>
+          <option value="es">ES</option>
+        </select>
+      </div>
+      <div class="lang-tooltip" id="langTooltip">Change language</div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+      <img class="floral-header-img" src="Flowers.png" alt="flowers"/>
+      <h1 id="i18n-headline">Will you join us<br>on our <em>special day?</em></h1>
+      <div class="couple-names">Carolina &amp; Erick</div>
+      <div class="event-details">
+        <span class="detail-item" id="i18n-eventDate">March 14th <span class="dot-sep">·</span> 15:00</span>
+        <span class="detail-item" id="i18n-eventVenue">La Cantina Restaurant</span>
+        <span class="detail-item" id="i18n-eventAddr" style="color:var(--gold-light);">2022 Stanley St, Montreal, QC</span>
+      </div>
+    </div>
+
+    <div class="divider"><span class="divider-icon">✦</span></div>
+
+    <!-- LOADING STATE -->
+    <div class="loading-wrap" id="loadingWrap">
+      <div class="spinner"></div>
+      <p id="i18n-loading">Loading guest list…</p>
+    </div>
+
+    <!-- CONNECTION ERROR -->
+    <div class="conn-error" id="connError">
+      <p>⚠️ Could not connect to the guest list.<br>Please check your connection and try again.<br><small style="font-size:0.75em;opacity:0.7;">If this keeps happening, make sure the Apps Script is deployed with access set to <strong>"Anyone"</strong>.</small></p>
+      <button class="retry-btn" onclick="loadGuests()">Try Again</button>
+    </div>
+
+    <!-- MAIN FORM -->
+    <div id="mainForm" style="display:none;">
+
+      <!-- Already responded notice -->
+      <div class="already-responded" id="alreadyRespondedNotice">
+        <strong id="prevResponseSummary"></strong>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" id="i18n-yourName">Your Name</label>
+        <div class="select-wrap">
+          <select id="guestSelect" onchange="onGuestSelected()">
+            <option value="">— Select your name —</option>
+          </select>
+          <span class="sel-arrow">▼</span>
+        </div>
+        <p class="field-error" id="nameError">Please select your name to continue.</p>
+      </div>
+
+      <div id="formBody" style="display:none;">
+
+        <!-- Attendance -->
+        <div class="form-group">
+          <label class="form-label" id="i18n-attendLabel">Will you be attending?</label>
+          <div class="att-grid">
+            <div class="att-option">
+              <input type="radio" name="attendance" id="attYes" value="yes" onchange="onAttendanceChange()"/>
+              <label class="att-label" for="attYes">
+                <span class="att-emoji">🥂</span>
+                <span class="att-text" id="i18n-attYes">Joyfully<br>Accepts</span>
+              </label>
+            </div>
+            <div class="att-option">
+              <input type="radio" name="attendance" id="attNo" value="no" onchange="onAttendanceChange()"/>
+              <label class="att-label" for="attNo">
+                <span class="att-emoji">💌</span>
+                <span class="att-text" id="i18n-attNo">Regretfully<br>Declines</span>
+              </label>
+            </div>
+          </div>
+          <p class="field-error" id="attendError">Please let us know if you'll be joining.</p>
+        </div>
+
+        <!-- Extra guests section (shown only if extras > 0 AND attendance = yes) -->
+        <div id="extrasSection">
+
+          <label class="check-row" for="bringingExtras" id="bringingExtrasRow" style="display:none;">
+            <input type="checkbox" id="bringingExtras" onchange="onBringingExtrasChange()"/>
+            <span class="check-box"></span>
+            <span class="check-text" id="i18n-bringingExtras">I'm bringing extra guests with me</span>
+          </label>
+
+          <div class="extras-section" id="extraGuestsBlock">
+
+            <div class="form-group" id="stepperGroup">
+              <label class="form-label" id="i18n-howMany">How many extra guests?</label>
+              <p class="field-hint" id="i18n-babiesHint" style="margin-bottom:0.5rem;">👉 Babies count as guests.</p>
+              <div class="stepper">
+                <button type="button" class="stepper-btn" id="stepperMinus" onclick="stepGuests(-1)" disabled>−</button>
+                <span class="stepper-value" id="stepperVal">0</span>
+                <button type="button" class="stepper-btn" id="stepperPlus" onclick="stepGuests(1)">+</button>
+              </div>
+              <input type="hidden" id="numExtras" value="0"/>
+            </div>
+
+            <div id="guestNamesBlock"></div>
+
+          </div>
+        </div>
+
+        <!-- Optional message -->
+        <div class="form-group">
+          <label class="form-label" id="i18n-msgLabel">A message for the couple <span style="opacity:0.5;font-size:0.9em;" id="i18n-optional">(optional)</span></label>
+          <textarea id="messageField" placeholder="Wishing you a lifetime of love and laughter…"></textarea>
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="submitRSVP()">Send My RSVP</button>
+
+      </div><!-- /formBody -->
+
+      <!-- Change answer link -->
+      <div class="change-link-wrap" id="changeAnswerWrap" style="display:none;">
+        <span class="change-link" onclick="showAllGuests()" id="i18n-changeAnswer">I already responded but I'd like to change my answer</span>
+      </div>
+
+    </div><!-- /mainForm -->
+
+    <!-- SUCCESS SCREEN -->
+    <div class="success-screen" id="successScreen">
+      <span class="success-icon" id="successIcon"></span>
+      <h2 id="successHeadline"></h2>
+      <p id="successMessage"></p>
+    </div>
+
+  </div><!-- /card -->
+</div><!-- /wrapper -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIGURATION
+//  Replace with your Cloudflare Worker URL after deploying
+// ══════════════════════════════════════════════════════════
+const WORKER_URL = 'https://wild-morning-fc6d.triffobravo-cloudflare.workers.dev';
+
+let guestData = [];
+let selectedGuest = null;
+let showingAll = false;
+let pollingInterval = null;
+
+// ── BOOT ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+  applyTranslations();
+  loadGuests();
+
+  // Language hint animation — runs once on first open
+  setTimeout(function() {
+    var picker = document.getElementById('langPicker');
+    if (picker) {
+      picker.classList.add('hinting');
+      // Clean up class after animation completes
+      setTimeout(function() { picker.classList.remove('hinting'); }, 4000);
+    }
+  }, 1000);
+});
+
+// ── LOAD GUESTS ───────────────────────────────────────────
+async function loadGuests() {
+  show('loadingWrap');
+  hide('connError');
+  hide('mainForm');
+
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), 12000)
+    );
+    const res = await Promise.race([
+      fetch(WORKER_URL + '?action=getGuests', { cache: 'no-store' }),
+      timeout
+    ]);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Server error');
+
+    guestData = json.data;
+    hide('loadingWrap');
+    show('mainForm');
+    populateGuestDropdown();
+
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(refreshGuests, 30000);
+
+  } catch (e) {
+    console.error('loadGuests error:', e.message);
+    hide('loadingWrap');
+    show('connError');
+  }
+}
+
+async function refreshGuests() {
+  try {
+    const res = await fetch(WORKER_URL + '?action=getGuests', { cache: 'no-store' });
+    const json = await res.json();
+    if (!json.success) return;
+
+    guestData = json.data;
+    var currentVal = document.getElementById('guestSelect').value;
+    if (!currentVal) populateGuestDropdown();
+
+  } catch (e) { /* silent */ }
+}
+
+// ── POPULATE DROPDOWN ─────────────────────────────────────
+function populateGuestDropdown() {
+  const sel = document.getElementById('guestSelect');
+  const currentVal = sel.value;
+
+  sel.innerHTML = '<option value="">— Select your name —</option>';
+
+  const toShow = showingAll
+    ? guestData
+    : guestData.filter(g => !g.responded);
+
+  toShow.forEach((g, i) => {
+    const opt = document.createElement('option');
+    opt.value = g.rowIndex;
+    opt.textContent = g.name + (g.responded ? ' ✓' : '');
+    sel.appendChild(opt);
+  });
+
+  const hasResponded = guestData.some(g => g.responded);
+  document.getElementById('changeAnswerWrap').style.display = hasResponded && !showingAll ? 'block' : 'none';
+
+  if (currentVal) sel.value = currentVal;
+}
+
+// ── SHOW ALL ──────────────────────────────────────────────
+function showAllGuests() {
+  showingAll = true;
+  populateGuestDropdown();
+  document.getElementById('changeAnswerWrap').style.display = 'none';
+  document.getElementById('guestSelect').value = '';
+  hide('formBody');
+  hide('alreadyRespondedNotice');
+}
+
+// ── GUEST SELECTED ────────────────────────────────────────
+function onGuestSelected() {
+  const sel = document.getElementById('guestSelect');
+  const rowIndex = parseInt(sel.value);
+  hide('nameError');
+
+  if (!rowIndex) {
+    selectedGuest = null;
+    hide('formBody');
+    hide('alreadyRespondedNotice');
+    return;
+  }
+
+  selectedGuest = guestData.find(g => g.rowIndex === rowIndex);
+  if (!selectedGuest) return;
+
+  document.querySelectorAll('input[name="attendance"]').forEach(r => r.checked = false);
+  document.getElementById('bringingExtrasRow').style.display = 'none';
+  document.getElementById('bringingExtras').checked = false;
+  document.getElementById('extraGuestsBlock').classList.remove('visible');
+  document.getElementById('numExtras').value = '0';
+  document.getElementById('stepperVal').textContent = '0';
+  document.getElementById('stepperMinus').disabled = true;
+  document.getElementById('stepperPlus').disabled = false;
+  document.getElementById('guestNamesBlock').innerHTML = '';
+  document.getElementById('messageField').value = '';
+  hide('attendError');
+
+  const notice = document.getElementById('alreadyRespondedNotice');
+  if (selectedGuest.responded) {
+    renderPrevNotice();
+    notice.style.display = 'block';
+
+    if (selectedGuest.attendance && selectedGuest.attendance.toLowerCase().startsWith('y')) {
+      document.getElementById('attYes').checked = true;
+    } else {
+      document.getElementById('attNo').checked = true;
+    }
+    onAttendanceChange(true);
+  } else {
+    notice.style.display = 'none';
+  }
+
+  show('formBody');
+}
+
+// ── RENDER PREV NOTICE (called on guest select AND on lang change) ──
+function renderPrevNotice() {
+  if (!selectedGuest || !selectedGuest.responded) return;
+  const att = selectedGuest.attendance === 'Sí' || selectedGuest.attendance === 'Yes' || selectedGuest.attendance === 'yes'
+    ? t('prevAttending') : t('prevNotAtt');
+  document.getElementById('prevResponseSummary').innerHTML =
+    t('prevNotice').replace('{status}', att);
+}
+
+// ── ATTENDANCE CHANGE ─────────────────────────────────────
+function onAttendanceChange(silent) {
+  if (!silent) hide('attendError');
+  const att = document.querySelector('input[name="attendance"]:checked');
+  if (!att) return;
+
+  const bringingRow = document.getElementById('bringingExtrasRow');
+  const maxExtras = selectedGuest ? parseInt(selectedGuest.extras) || 0 : 0;
+
+  if (att.value === 'yes' && maxExtras === 1) {
+    // Exactly 1 extra: show checkbox but no stepper — fields appear when checkbox is ticked
+    bringingRow.style.display = 'flex';
+    document.getElementById('extraGuestsBlock').classList.remove('visible');
+    document.getElementById('stepperGroup').style.display = 'none';
+    document.getElementById('numExtras').value = '0';
+    document.getElementById('guestNamesBlock').innerHTML = '';
+  } else if (att.value === 'yes' && maxExtras > 1) {
+    bringingRow.style.display = 'flex';
+    resetStepper();
+  } else {
+    bringingRow.style.display = 'none';
+    document.getElementById('bringingExtras').checked = false;
+    document.getElementById('extraGuestsBlock').classList.remove('visible');
+    document.getElementById('numExtras').value = '0';
+    document.getElementById('stepperVal').textContent = '0';
+    document.getElementById('guestNamesBlock').innerHTML = '';
+    document.getElementById('stepperGroup').style.display = '';
+  }
+}
+
+// ── STEPPER HELPERS ──────────────────────────────────────
+function resetStepper() {
+  document.getElementById('numExtras').value = '0';
+  document.getElementById('stepperVal').textContent = '0';
+  document.getElementById('stepperMinus').disabled = true;
+  const maxExtras = selectedGuest ? parseInt(selectedGuest.extras) || 0 : 0;
+  document.getElementById('stepperPlus').disabled = (maxExtras === 0);
+  document.getElementById('guestNamesBlock').innerHTML = '';
+}
+
+function stepGuests(delta) {
+  const maxExtras = selectedGuest ? parseInt(selectedGuest.extras) || 0 : 0;
+  let val = parseInt(document.getElementById('numExtras').value) || 0;
+  val = Math.min(maxExtras, Math.max(0, val + delta));
+
+  document.getElementById('numExtras').value = val;
+  document.getElementById('stepperVal').textContent = val;
+  document.getElementById('stepperMinus').disabled = (val <= 0);
+  document.getElementById('stepperPlus').disabled = (val >= maxExtras);
+
+  buildGuestNameFields(val);
+}
+
+function buildGuestNameFields(val) {
+  const block = document.getElementById('guestNamesBlock');
+  block.innerHTML = '';
+  for (let i = 1; i <= val; i++) {
+    const entry = document.createElement('div');
+    entry.className = 'guest-entry';
+    entry.innerHTML = `
+      <div class="guest-entry-header">${t('guestHeader')} ${i}</div>
+      <div class="form-group" style="margin-bottom:0.6rem;">
+        <label class="form-label">${t('guestNameLabel')}</label>
+        <input type="text" id="guestName_${i}" placeholder="${t('guestNamePH')}"/>
+        <p class="field-error" id="guestNameErr_${i}">${t('guestNameErr')}</p>
+      </div>
+      <label class="check-row" for="underage_${i}" style="margin-bottom:0;">
+        <input type="checkbox" id="underage_${i}" onchange="onUnderageChange(${i})"/>
+        <span class="check-box"></span>
+        <span class="check-text">${t('underage')}</span>
+      </label>
+      <div class="age-input-wrap" id="ageWrap_${i}">
+        <div class="form-group" style="margin-top:0.6rem; margin-bottom:0;">
+          <label class="form-label">${t('ageLabel')} ${i}</label>
+          <input type="number" id="guestAge_${i}" min="0" max="11" placeholder="${t('agePH')}"/>
+          <p class="field-error" id="guestAgeErr_${i}">${t('ageErr')}</p>
+        </div>
+      </div>
+    `;
+    block.appendChild(entry);
+  }
+}
+
+// ── EXTRAS CHECKBOX ───────────────────────────────────────
+function onBringingExtrasChange() {
+  const checked = document.getElementById('bringingExtras').checked;
+  const block = document.getElementById('extraGuestsBlock');
+  const maxExtras = selectedGuest ? parseInt(selectedGuest.extras) || 0 : 0;
+
+  if (checked) {
+    block.classList.add('visible');
+    if (maxExtras === 1) {
+      // Skip stepper — lock to 1 and show guest fields directly
+      document.getElementById('stepperGroup').style.display = 'none';
+      document.getElementById('numExtras').value = '1';
+      document.getElementById('stepperVal').textContent = '1';
+      buildGuestNameFields(1);
+    } else {
+      document.getElementById('stepperGroup').style.display = '';
+      resetStepper();
+    }
+  } else {
+    block.classList.remove('visible');
+    document.getElementById('numExtras').value = '0';
+    document.getElementById('stepperVal').textContent = '0';
+    document.getElementById('guestNamesBlock').innerHTML = '';
+    document.getElementById('stepperGroup').style.display = '';
+  }
+}
+
+// ── UNDERAGE TOGGLE ───────────────────────────────────────
+function onUnderageChange(i) {
+  const checked = document.getElementById(`underage_${i}`).checked;
+  const wrap = document.getElementById(`ageWrap_${i}`);
+  if (checked) wrap.classList.add('visible');
+  else { wrap.classList.remove('visible'); document.getElementById(`guestAge_${i}`).value = ''; }
+}
+
+// ── VALIDATE & SUBMIT ─────────────────────────────────────
+async function submitRSVP() {
+  if (!selectedGuest) { show('nameError'); return; }
+
+  const att = document.querySelector('input[name="attendance"]:checked');
+  if (!att) { show('attendError'); return; }
+
+  const bringingExtras = document.getElementById('bringingExtras').checked;
+  const numExtras = bringingExtras ? (parseInt(document.getElementById('numExtras').value) || 0) : 0;
+
+  let extraGuestNames = [];
+  let underageGuests = [];
+  let valid = true;
+
+  for (let i = 1; i <= numExtras; i++) {
+    const nameVal = (document.getElementById(`guestName_${i}`)?.value || '').trim();
+    if (!nameVal) { show(`guestNameErr_${i}`); valid = false; }
+    else { hide(`guestNameErr_${i}`); }
+
+    const isUnderage = document.getElementById(`underage_${i}`)?.checked;
+    if (isUnderage) {
+      const age = document.getElementById(`guestAge_${i}`)?.value || '';
+      const ageNum = parseInt(age);
+      if (!age || isNaN(ageNum) || ageNum < 0 || ageNum > 11) {
+        show(`guestAgeErr_${i}`); valid = false;
+      } else {
+        hide(`guestAgeErr_${i}`);
+        underageGuests.push(`${nameVal} (age ${ageNum})`);
+        extraGuestNames.push(`${nameVal} (age ${ageNum})`);
+      }
+    }
+    if (nameVal && !isUnderage) extraGuestNames.push(nameVal);
+  }
+
+  if (!valid) return;
+
+  const isAttending = att.value === 'yes';
+  const msgVal = document.getElementById('messageField').value.trim();
+
+  const payload = {
+    action: 'submitRSVP',
+    rowIndex: selectedGuest.rowIndex,
+    responded: 'Yes',
+    attendance: isAttending ? 'Yes' : 'No',
+    numExtraGuests: isAttending ? (numExtras || 0) : '-',
+    extraGuestNames: isAttending ? (extraGuestNames.join('\n') || '-') : '-',
+    underageCount: isAttending ? (underageGuests.length || '-') : '-',
+    underageDetails: isAttending ? (underageGuests.join('\n') || '-') : '-',
+    message: msgVal || '-'
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = t('submitting');
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Server error');
+
+    hide('mainForm');
+    const isAttendingSuccess = att.value === 'yes';
+    document.getElementById('successIcon').textContent = isAttendingSuccess ? '🎊' : '💐';
+    document.getElementById('successHeadline').innerHTML = isAttendingSuccess
+      ? t('successYesH').replace('{name}', selectedGuest.name)
+      : t('successNoH').replace('{name}', selectedGuest.name);
+    document.getElementById('successMessage').textContent = isAttendingSuccess
+      ? t('successYesM') : t('successNoM');
+    show('successScreen');
+
+    await refreshGuests();
+
+  } catch (e) {
+    console.error(e);
+    alert(t('errGeneric'));
+    btn.disabled = false;
+    btn.textContent = t('submit');
+  }
+}
+
+
+// ── TRANSLATIONS ──────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    headline:      "Will you join us<br>on our <em>special day?</em>",
+    loading:       "Loading guest list…",
+    yourName:      "Your Name",
+    selectName:    "— Select your name —",
+    nameError:     "Please select your name to continue.",
+    attendLabel:   "Will you be attending?",
+    attYes:        "Joyfully<br>Accepts",
+    attNo:         "Regretfully<br>Declines",
+    attendError:   "Please let us know if you'll be joining.",
+    bringingExtras:"I'm bringing extra guests with me",
+    howMany:       "How many extra guests?",
+    babiesHint:    "👉 Babies count as guests.",
+    msgLabel:      "A message for the couple",
+    optional:      "(optional)",
+    msgPH:         "Wishing you a lifetime of love and laughter…",
+    submit:        "Send My RSVP",
+    submitting:    "Sending…",
+    changeAnswer:  "I already responded but I'd like to change my answer",
+    guestHeader:   "Extra Guest",
+    guestNameLabel:"Full Name",
+    guestNamePH:   "Guest's full name",
+    guestNameErr:  "Please enter the guest's name.",
+    underage:      "This guest is under 12 years old",
+    ageLabel:      "Age of Guest",
+    agePH:         "Age (0–11)",
+    ageErr:        "Please enter a valid age (0–11).",
+    prevAttending: "attending ✓",
+    prevNotAtt:    "not attending ✗",
+    prevNotice:    "You previously responded that you are <strong>{status}</strong>. You can update your answer below.",
+    successYesH:   "See you there, <em>{name}!</em>",
+    successNoH:    "We'll miss you, <em>{name}.</em>",
+    successYesM:   "Your RSVP has been received! We can't wait to celebrate with you on March 14th at La Cantina.",
+    successNoM:    "Thank you for letting us know. You'll be with us in spirit on our special day.",
+    errGeneric:    "Something went wrong. Please try again.",
+    retry:         "Try Again",
+    eventDate:     "March 14th · 15:00",
+    eventVenue:    "La Cantina Restaurant",
+    eventAddr:     "2022 Stanley St, Montreal, QC, Canada",
+  },
+  fr: {
+    headline:      "Serez-vous des nôtres<br>en ce jour <em>spécial ?</em>",
+    loading:       "Chargement de la liste…",
+    yourName:      "Votre prénom",
+    selectName:    "— Sélectionnez votre nom —",
+    nameError:     "Veuillez sélectionner votre nom pour continuer.",
+    attendLabel:   "Serez-vous présent(e) ?",
+    attYes:        "Avec joie,<br>j’accepte",
+    attNo:         "À regret,<br>je décline",
+    attendError:   "Veuillez indiquer si vous serez présent(e).",
+    bringingExtras:"J’amène des invités supplémentaires",
+    howMany:       "Combien d’invités supplémentaires ?",
+    babiesHint:    "👉 Les bébés comptent comme invités.",
+    msgLabel:      "Un message pour les mariés",
+    optional:      "(facultatif)",
+    msgPH:         "Avec tous nos vœux de bonheur…",
+    submit:        "Envoyer ma réponse",
+    submitting:    "Envoi…",
+    changeAnswer:  "J’ai déjà répondu mais je souhaite modifier ma réponse",
+    guestHeader:   "Invité supplémentaire",
+    guestNameLabel:"Nom complet",
+    guestNamePH:   "Nom de l’invité",
+    guestNameErr:  "Veuillez entrer le nom de l’invité.",
+    underage:      "Cet invité a moins de 12 ans",
+    ageLabel:      "Âge de l’invité",
+    agePH:         "Âge (0–11)",
+    ageErr:        "Veuillez entrer un âge valide (0–11).",
+    prevAttending: "présent(e) ✓",
+    prevNotAtt:    "absent(e) ✗",
+    prevNotice:    "Vous avez répondu précédemment que vous serez <strong>{status}</strong>. Vous pouvez modifier votre réponse ci-dessous.",
+    successYesH:   "À bientôt, <em>{name} !</em>",
+    successNoH:    "Vous nous manquerez, <em>{name}.</em>",
+    successYesM:   "Votre réponse a été reçue ! Nous avons hâte de fêter ça avec vous le 14 mars à La Cantina.",
+    successNoM:    "Merci de nous avoir prévenus. Vous serez dans nos pensées en ce jour spécial.",
+    errGeneric:    "Une erreur est survenue. Veuillez réessayer.",
+    retry:         "Réessayer",
+    eventDate:     "14 mars · 15h00",
+    eventVenue:    "La Cantina Restaurant",
+    eventAddr:     "2022 Stanley St, Montréal, QC, Canada",
+  },
+  es: {
+    headline:      "¿Nos acompañarás<br>en nuestro <em>día especial?</em>",
+    loading:       "Cargando lista de invitados…",
+    yourName:      "Tu nombre",
+    selectName:    "— Selecciona tu nombre —",
+    nameError:     "Por favor selecciona tu nombre para continuar.",
+    attendLabel:   "¿Podrás asistir?",
+    attYes:        "Con mucho<br>gusto, sí",
+    attNo:         "Con pesar,<br>no podré",
+    attendError:   "Por favor indícanos si asistirás.",
+    bringingExtras:"Vendré con invitados adicionales",
+    howMany:       "¿Cuántos invitados adicionales?",
+    babiesHint:    "👉 Los bebés cuentan como invitados.",
+    msgLabel:      "Un mensaje para los novios",
+    optional:      "(opcional)",
+    msgPH:         "Les deseamos una vida llena de amor y alegría…",
+    submit:        "Enviar mi confirmación",
+    submitting:    "Enviando…",
+    changeAnswer:  "Ya respondí pero me gustaría cambiar mi respuesta",
+    guestHeader:   "Invitado adicional",
+    guestNameLabel:"Nombre completo",
+    guestNamePH:   "Nombre del invitado",
+    guestNameErr:  "Por favor ingresa el nombre del invitado.",
+    underage:      "Este invitado tiene menos de 12 años",
+    ageLabel:      "Edad del invitado",
+    agePH:         "Edad (0–11)",
+    ageErr:        "Por favor ingresa una edad válida (0–11).",
+    prevAttending: "asistiendo ✓",
+    prevNotAtt:    "no asistiendo ✗",
+    prevNotice:    "Respondiste anteriormente que estás <strong>{status}</strong>. Puedes actualizar tu respuesta abajo.",
+    successYesH:   "¡Hasta pronto, <em>{name}!</em>",
+    successNoH:    "Te echaremos de menos, <em>{name}.</em>",
+    successYesM:   "Tu confirmación ha sido recibida. ¡No podemos esperar para celebrar contigo el 14 de marzo en La Cantina!",
+    successNoM:    "Gracias por avisarnos. Estarás en nuestros corazones en este día tan especial.",
+    errGeneric:    "Algo salió mal. Por favor inténtalo de nuevo.",
+    retry:         "Intentar de nuevo",
+    eventDate:     "14 de marzo · 15:00",
+    eventVenue:    "La Cantina Restaurant",
+    eventAddr:     "2022 Stanley St, Montr\u00e9al, QC, Canad\u00e1",
+  }
+};
+
+let currentLang = 'en';
+
+function t(key) {
+  return (TRANSLATIONS[currentLang] || TRANSLATIONS.en)[key] || TRANSLATIONS.en[key] || key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelector('.lang-select').value = lang;
+  applyTranslations();
+}
+
+function applyTranslations() {
+  // Helper: set innerHTML for elements that need HTML tags
+  function setHTML(id, key) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = t(key);
+  }
+  function setText(id, key) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  }
+
+  setHTML('i18n-headline',      'headline');
+  setText('i18n-loading',       'loading');
+  setText('i18n-yourName',      'yourName');
+  setText('i18n-attendLabel',   'attendLabel');
+  setHTML('i18n-attYes',        'attYes');
+  setHTML('i18n-attNo',         'attNo');
+  setText('i18n-bringingExtras','bringingExtras');
+  setText('i18n-howMany',       'howMany');
+  setText('i18n-babiesHint',    'babiesHint');
+  setText('i18n-msgLabel',      'msgLabel');
+  setText('i18n-optional',      'optional');
+  setText('i18n-changeAnswer',  'changeAnswer');
+
+  // Error messages
+  setText('nameError',          'nameError');
+  setText('attendError',        'attendError');
+
+  // Submit button (only if not mid-submit)
+  var btn = document.getElementById('submitBtn');
+  if (btn && !btn.disabled) btn.textContent = t('submit');
+
+  // Message textarea placeholder
+  var ta = document.getElementById('messageField');
+  if (ta) ta.placeholder = t('msgPH');
+
+  // Guest dropdown first option
+  var sel = document.getElementById('guestSelect');
+  if (sel && sel.options[0]) sel.options[0].textContent = t('selectName');
+
+  // Retry button
+  var retry = document.querySelector('.retry-btn');
+  if (retry) retry.textContent = t('retry');
+
+  // Event details
+  setText('i18n-eventDate',  'eventDate');
+  setText('i18n-eventVenue', 'eventVenue');
+  setText('i18n-eventAddr',  'eventAddr');
+
+  // Re-render prev-response notice if a guest is selected
+  renderPrevNotice();
+
+  // Rebuild guest name fields in current language if any are showing
+  var numExtras = parseInt(document.getElementById('numExtras') && document.getElementById('numExtras').value) || 0;
+  if (numExtras > 0) buildGuestNameFields(numExtras);
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function show(id) { const el = document.getElementById(id); if (el) el.style.display = 'block'; }
+function hide(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+</script>
+
+</body>
+</html>
