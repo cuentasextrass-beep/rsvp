@@ -463,6 +463,15 @@
       text-align: center;
       margin: 0 0 1.2rem;
     }
+    .countdown-date {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.7;
+      margin-bottom: 0.3rem;
+      font-weight: 700;
+    }
     .countdown-label {
       font-size: 0.6rem;
       letter-spacing: 0.14em;
@@ -670,6 +679,7 @@
 
     <!-- RSVP COUNTDOWN -->
     <div class="rsvp-countdown" id="rsvpCountdown">
+      <p class="countdown-date" id="countdown-date">Please confirm your attendance by March 1st.</p>
       <p class="countdown-label" id="countdown-label">RSVP closes in</p>
       <div class="countdown-blocks">
         <div class="countdown-block">
@@ -817,9 +827,9 @@ let pollingInterval = null;
 const RSVP_CLOSE_DATE = new Date('2026-03-02T05:01:00Z');
 
 const countdownLabels = {
-  en: { label: 'RSVP closes in', days: 'Days', hrs: 'Hrs', min: 'Min', sec: 'Sec' },
-  fr: { label: 'Fermeture dans', days: 'Jours', hrs: 'H',   min: 'Min', sec: 'Sec' },
-  es: { label: 'El RSVP cierra en', days: 'Días', hrs: 'Hrs', min: 'Min', sec: 'Seg' }
+  en: { label: 'RSVP closes in', days: 'Days', hrs: 'Hrs', min: 'Min', sec: 'Sec', top: 'Please confirm your attendance by March 1st'},
+  fr: { label: 'Fermeture dans', days: 'Jours', hrs: 'H',   min: 'Min', sec: 'Sec', top: 'Veuillez confirmer votre présence avant le 1er mars'},
+  es: { label: 'El RSVP cierra en', days: 'Días', hrs: 'Hrs', min: 'Min', sec: 'Seg', top: 'Confirma tu asistencia antes del primero de marzo'}
 };
 
 function updateCountdown() {
@@ -842,6 +852,7 @@ function updateCountdown() {
   document.getElementById('cd-secs').textContent  = String(secs).padStart(2, '0');
 
   const l = countdownLabels[currentLang] || countdownLabels.en;
+  document.getElementById('countdown-date').textContent    = l.top;
   document.getElementById('countdown-label').textContent    = l.label;
   document.getElementById('cd-days-label').textContent      = l.days;
   document.getElementById('cd-hours-label').textContent     = l.hrs;
