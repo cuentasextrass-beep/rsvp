@@ -64,7 +64,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      border-image-source: url('frame.png');
+      border-image-source: url('Frame.png');
       /* slice: top=700 right=0 bottom=700 left=0 (source pixels), fill=keep center */
       border-image-slice: 700 0 700 0 fill;
       /* width: how tall the caps render on screen ≈ 83px each */
@@ -458,6 +458,52 @@
       margin-bottom: 0.5rem;
       letter-spacing: 0.04em;
     }
+    /* ── RSVP COUNTDOWN ── */
+    .rsvp-countdown {
+      text-align: center;
+      margin: 0 0 1.2rem;
+    }
+    .countdown-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.7;
+      margin-bottom: 0.3rem;
+    }
+    .countdown-blocks {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .countdown-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .countdown-num {
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1;
+    }
+    .countdown-unit {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.6;
+      margin-top: 0.15rem;
+    }
+    .countdown-sep {
+      font-size: 0.7rem;
+      color: var(--border);
+      padding: 0 0.1rem 0.35rem;
+      line-height: 1;
+    }
+
     /* ── RSVP CLOSED OVERLAY ── */
     .rsvp-closed-overlay {
       display: none;
@@ -525,6 +571,44 @@
       color: var(--gold);
       margin: 0.5rem 0 0;
     }
+    /* lang picker inside closed overlay */
+    .rsvp-closed-box .closed-lang-picker {
+      position: absolute;
+      top: 0.9rem;
+      right: 1.2rem;
+    }
+    .rsvp-closed-box .closed-lang-picker.hinting .lang-select-wrap {
+      animation: langPulse 0.9s ease 0.6s 2;
+    }
+    .rsvp-closed-box .closed-lang-picker.hinting .lang-select {
+      animation: langCycleHighlight 1.8s ease 0.6s 1 forwards;
+    }
+    .rsvp-closed-box .closed-lang-tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--brown);
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding: 0.35rem 0.7rem;
+      border-radius: 3px;
+      pointer-events: none;
+      opacity: 0;
+      animation: langTooltipFade 2.8s ease 0.4s 1 forwards;
+    }
+    .rsvp-closed-box .closed-lang-tooltip::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      right: 10px;
+      border: 5px solid transparent;
+      border-bottom-color: var(--brown);
+    }
   </style>
 </head>
 <body>
@@ -532,6 +616,17 @@
 <!-- RSVP CLOSED OVERLAY (shown on/after March 2, 2026) -->
 <div class="rsvp-closed-overlay" id="rsvpClosedOverlay">
   <div class="rsvp-closed-box">
+    <!-- Language picker -->
+    <div class="closed-lang-picker" id="closedLangPicker">
+      <div class="lang-select-wrap">
+        <select class="lang-select" onchange="setLang(this.value)" aria-label="Language">
+          <option value="en">EN</option>
+          <option value="fr">FR</option>
+          <option value="es">ES</option>
+        </select>
+      </div>
+      <div class="closed-lang-tooltip">Change language</div>
+    </div>
     <span class="rsvp-closed-icon">💌</span>
     <h2 id="closed-headline">RSVP is now <em>closed</em></h2>
     <p id="closed-body">If you forgot to respond or need to make a change, please reach out directly to the bride or groom.</p>
@@ -561,7 +656,7 @@
 
     <!-- HEADER -->
     <div class="header">
-      <img class="floral-header-img" src="flowers.png" alt="flowers"/>
+      <img class="floral-header-img" src="Flowers.png" alt="flowers"/>
       <h1 id="i18n-headline">Will you join us<br>on our <em>special day?</em></h1>
       <div class="couple-names">Carolina &amp; Erick</div>
       <div class="event-details">
@@ -573,7 +668,31 @@
 
     <div class="divider"><span class="divider-icon">✦</span></div>
 
-    <!-- LOADING STATE -->
+    <!-- RSVP COUNTDOWN -->
+    <div class="rsvp-countdown" id="rsvpCountdown">
+      <p class="countdown-label" id="countdown-label">RSVP closes in</p>
+      <div class="countdown-blocks">
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-days">--</div>
+          <div class="countdown-unit" id="cd-days-label">Days</div>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-hours">--</div>
+          <div class="countdown-unit" id="cd-hours-label">Hrs</div>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-mins">--</div>
+          <div class="countdown-unit" id="cd-mins-label">Min</div>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-secs">--</div>
+          <div class="countdown-unit" id="cd-secs-label">Sec</div>
+        </div>
+      </div>
+    </div>
     <div class="loading-wrap" id="loadingWrap">
       <div class="spinner"></div>
       <p id="i18n-loading">Loading guest list…</p>
@@ -694,13 +813,56 @@ let selectedGuest = null;
 let showingAll = false;
 let pollingInterval = null;
 
-// ── RSVP CLOSED CHECK ─────────────────────────────────────
+// ── RSVP COUNTDOWN ────────────────────────────────────────
+const RSVP_CLOSE_DATE = new Date('2026-02-23T20:45:00Z');
+
+const countdownLabels = {
+  en: { label: 'RSVP closes in', days: 'Days', hrs: 'Hrs', min: 'Min', sec: 'Sec' },
+  fr: { label: 'Fermeture dans', days: 'Jours', hrs: 'H',   min: 'Min', sec: 'Sec' },
+  es: { label: 'El RSVP cierra en', days: 'Días', hrs: 'Hrs', min: 'Min', sec: 'Seg' }
+};
+
+function updateCountdown() {
+  const now  = new Date();
+  const diff = RSVP_CLOSE_DATE - now;
+
+  if (diff <= 0) {
+    document.getElementById('rsvpCountdown').style.display = 'none';
+    return;
+  }
+
+  const days  = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000)  / 60000);
+  const secs  = Math.floor((diff % 60000)    / 1000);
+
+  document.getElementById('cd-days').textContent  = String(days).padStart(2, '0');
+  document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+  document.getElementById('cd-mins').textContent  = String(mins).padStart(2, '0');
+  document.getElementById('cd-secs').textContent  = String(secs).padStart(2, '0');
+
+  const l = countdownLabels[currentLang] || countdownLabels.en;
+  document.getElementById('countdown-label').textContent    = l.label;
+  document.getElementById('cd-days-label').textContent      = l.days;
+  document.getElementById('cd-hours-label').textContent     = l.hrs;
+  document.getElementById('cd-mins-label').textContent      = l.min;
+  document.getElementById('cd-secs-label').textContent      = l.sec;
+}
+
+
 function checkRsvpClosed() {
-  // March 2, 2026 at 00:01 Montreal time (EST = UTC-5)
-  const closeDate = new Date('2026-02-23T20:28:00Z');
+  // March 2, 2026 at 15:28 Montreal time (EST = UTC-5)
+  const closeDate = RSVP_CLOSE_DATE;
   if (new Date() >= closeDate) {
     document.getElementById('rsvpClosedOverlay').classList.add('visible');
     applyClosedTranslations();
+    setTimeout(function() {
+      var picker = document.getElementById('closedLangPicker');
+      if (picker) {
+        picker.classList.add('hinting');
+        setTimeout(function() { picker.classList.remove('hinting'); }, 4000);
+      }
+    }, 1000);
   }
 }
 
@@ -732,6 +894,8 @@ function applyClosedTranslations() {
 window.addEventListener('DOMContentLoaded', function() {
   applyTranslations();
   checkRsvpClosed();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
   loadGuests();
 
   // Language hint animation — runs once on first open
@@ -1214,7 +1378,8 @@ function t(key) {
 
 function setLang(lang) {
   currentLang = lang;
-  document.querySelector('.lang-select').value = lang;
+  // keep all lang selects in sync
+  document.querySelectorAll('.lang-select').forEach(el => el.value = lang);
   applyTranslations();
   applyClosedTranslations();
 }
@@ -1276,7 +1441,7 @@ function applyTranslations() {
   if (numExtras > 0) buildGuestNameFields(numExtras);
 }
 
-// ── HELPERS ────-───────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────
 function show(id) { const el = document.getElementById(id); if (el) el.style.display = 'block'; }
 function hide(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
 </script>
