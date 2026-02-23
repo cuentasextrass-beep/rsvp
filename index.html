@@ -458,9 +458,87 @@
       margin-bottom: 0.5rem;
       letter-spacing: 0.04em;
     }
+    /* ── RSVP CLOSED OVERLAY ── */
+    .rsvp-closed-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 10, 46, 0.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .rsvp-closed-overlay.visible {
+      display: flex;
+    }
+    .rsvp-closed-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      max-width: 420px;
+      width: 100%;
+      padding: 2.8rem 2.4rem 2.4rem;
+      text-align: center;
+      position: relative;
+      animation: slideDown 0.5s ease both;
+    }
+    .rsvp-closed-icon {
+      font-size: 2.4rem;
+      margin-bottom: 1.1rem;
+      display: block;
+    }
+    .rsvp-closed-box h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 400;
+      color: var(--dark);
+      margin-bottom: 0.9rem;
+      line-height: 1.3;
+    }
+    .rsvp-closed-box h2 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+    .rsvp-closed-box p {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 0.75rem;
+    }
+    .rsvp-closed-box p:last-child {
+      margin-bottom: 0;
+    }
+    .rsvp-closed-box .rsvp-closed-note {
+      font-size: 0.76rem;
+      color: var(--muted);
+      opacity: 0.75;
+      font-style: italic;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+    .rsvp-closed-box .contact-names {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--gold);
+      margin: 0.5rem 0 0;
+    }
   </style>
 </head>
 <body>
+
+<!-- RSVP CLOSED OVERLAY (shown on/after March 2, 2026) -->
+<div class="rsvp-closed-overlay" id="rsvpClosedOverlay">
+  <div class="rsvp-closed-box">
+    <span class="rsvp-closed-icon">💌</span>
+    <h2 id="closed-headline">RSVP is now <em>closed</em></h2>
+    <p id="closed-body">If you forgot to respond or need to make a change, please reach out directly to the bride or groom.</p>
+    <p class="contact-names">Carolina &amp; Erick</p>
+    <p class="rsvp-closed-note" id="closed-note">Please note that all arrangements have already been made — any last-minute changes may not be possible. We appreciate your understanding! 🤍</p>
+  </div>
+</div>
 
 <div class="wrapper">
   <div class="floral-frame-left"></div>
@@ -616,9 +694,44 @@ let selectedGuest = null;
 let showingAll = false;
 let pollingInterval = null;
 
+// ── RSVP CLOSED CHECK ─────────────────────────────────────
+function checkRsvpClosed() {
+  // March 2, 2026 at 00:01 Montreal time (EST = UTC-5)
+  const closeDate = new Date('2026-02-23T20:28:00Z');
+  if (new Date() >= closeDate) {
+    document.getElementById('rsvpClosedOverlay').classList.add('visible');
+    applyClosedTranslations();
+  }
+}
+
+function applyClosedTranslations() {
+  const closed = {
+    en: {
+      headline: 'RSVP is now <em>closed</em>',
+      body:     'If you forgot to respond or need to make a change, please reach out directly to the bride or groom.',
+      note:     'Please note that all arrangements have already been made — any last-minute changes may not be possible. We appreciate your understanding! 🤍'
+    },
+    fr: {
+      headline: 'Les RSVP sont <em>clôturés</em>',
+      body:     'Si vous avez oublié de répondre ou souhaitez modifier votre réponse, veuillez contacter directement la mariée ou le marié.',
+      note:     'Veuillez noter que toutes les dispositions ont déjà été prises — les modifications de dernière minute pourraient ne pas être possibles. Merci de votre compréhension ! 🤍'
+    },
+    es: {
+      headline: 'El RSVP está <em>cerrado</em>',
+      body:     'Si olvidaste responder o necesitas hacer un cambio, por favor contacta directamente a la novia o al novio.',
+      note:     'Ten en cuenta que todos los arreglos ya han sido realizados — los cambios de último momento pueden no ser posibles. ¡Agradecemos tu comprensión! 🤍'
+    }
+  };
+  const lang = closed[currentLang] || closed.en;
+  document.getElementById('closed-headline').innerHTML = lang.headline;
+  document.getElementById('closed-body').textContent   = lang.body;
+  document.getElementById('closed-note').textContent   = lang.note;
+}
+
 // ── BOOT ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', function() {
   applyTranslations();
+  checkRsvpClosed();
   loadGuests();
 
   // Language hint animation — runs once on first open
@@ -1103,6 +1216,7 @@ function setLang(lang) {
   currentLang = lang;
   document.querySelector('.lang-select').value = lang;
   applyTranslations();
+  applyClosedTranslations();
 }
 
 function applyTranslations() {
